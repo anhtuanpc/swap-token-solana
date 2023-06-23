@@ -6,7 +6,7 @@ pub enum CustomError {
     ToolargeAmount,
 
     #[msg("[SWAP]: Not enough balance")]
-    InsufficienFunds,
+    InsufficientFunds,
 
     #[msg("[SWAP]: Invalid account type")]
     InvalidAccount,

@@ -1,7 +1,8 @@
 import * as anchor from "@coral-xyz/anchor";
 import { assert } from "chai";
 import { airdrop, createToken, mint, setup } from "./utils";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { formatUnits, parseUnits } from "@ethersproject/units";
+import { getAccount, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 
 describe("# Solana Program Test Swap", async () => {
   // Configure the client to use the local cluster.
@@ -19,8 +20,8 @@ describe("# Solana Program Test Swap", async () => {
   let poolNativeAccount: anchor.web3.PublicKey;
   let poolConfigAccount: anchor.web3.PublicKey;
   const decimals = 6;
-  let tokenPrice = 10;
-  let tokenDenominator = 1;
+  const tokenPrice = 10;
+  const addLiquidAmount = 10000;
   // Ensure that the proportion of Sol : Token = 1 : 10
 
   before(async () => {
@@ -105,6 +106,30 @@ describe("# Solana Program Test Swap", async () => {
       poolConfigAccountData.poolNativeAccount.toString(),
       poolNativeAccount.toString()
     );
+  });
+
+  it("[2]: Add liquidity successfully", async () => {
+    // add liquid amount
+    const rawAmount = parseUnits(
+      addLiquidAmount.toString(),
+      decimals
+    ).toNumber();
+    await program.methods
+      .addLiquidInstruction(new anchor.BN(rawAmount))
+      .accounts({
+        poolConfigAccount: poolConfigAccount,
+        poolNativeAccount: poolNativeAccount,
+        poolTokenAccount: poolTokenAccount,
+        tokenMintAddress: mintAddress,
+        authority: authority.publicKey,
+        depositorTokenAccount: associatedAccount, 
+        depositor: authority.publicKey, // reuse authority as a depositor to liquid pool
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .rpc();
+    const info = await getAccount(connection, poolTokenAccount);
+    assert.equal(Number(info.amount), rawAmount);
   });
 });
 

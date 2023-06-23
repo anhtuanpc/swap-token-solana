@@ -18,4 +18,12 @@ pub mod swap_token_solana {
         init_pool(ctx, token_price)?;
         Ok(())
     }
+
+    pub fn add_liquid_instruction<'info>(
+        ctx: Context<'_, '_, '_, 'info, AddLiquid<'info>>,
+        amount: u64
+    ) -> Result<()> {
+        add_liquidity(ctx, amount)?;
+        Ok(())
+    }
 }
