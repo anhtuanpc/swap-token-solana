@@ -1,6 +1,6 @@
 import * as anchor from "@coral-xyz/anchor";
 import { assert } from "chai";
-import { airdrop, createToken, mint, setup } from "./utils";
+import { ErrorMessage, airdrop, createToken, mint, setup } from "./utils";
 import { formatUnits, parseUnits } from "@ethersproject/units";
 import { getAccount, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 
@@ -164,6 +164,33 @@ describe("# Solana Program Test Swap", async () => {
       (rawTokenPrice * swapSolValue * anchor.web3.LAMPORTS_PER_SOL) /
       anchor.web3.LAMPORTS_PER_SOL;
     assert.equal(Number(userTokenBalance), tokenReceive);
+  });
+
+  it("[4]: Swap Token insufficient funds", async () => {
+    const userBalance = await connection.getBalance(user.publicKey);
+    let sig: string | null;
+    try {
+      sig = await program.methods
+        .swap(new anchor.BN(userBalance + 1))
+        .accounts({
+          poolConfigAccount: poolConfigAccount,
+          poolTokenAccount: poolTokenAccount,
+          poolNativeAccount: poolNativeAccount,
+          tokenMintAddress: mintAddress,
+          authority: authority.publicKey,
+          userTokenAccount: userTokenAccount,
+          user: user.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        })
+        .signers([user])
+        .rpc();
+    } catch (error) {
+      assert.equal(error.error.errorCode.code, "InsufficientFunds");
+      assert.equal(error.error.errorCode.number, 6001);
+      assert.equal(error.error.errorMessage, ErrorMessage.InsufficientFunds);
+    }
+    assert.equal(sig, null);
   });
 });
 

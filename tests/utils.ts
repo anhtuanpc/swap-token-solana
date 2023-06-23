@@ -162,3 +162,11 @@ export async function airdrop(
 export function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+export const ErrorMessage = {
+  InsufficientFunds: "[SWAP]: Not enough balance",
+  InvalidAccount: "[SWAP]: Invalid account type",
+  TooLargeAmount: "[SWAP]: Amount swap too large",
+  InvalidAuthority: "[SWAP]: Invalid authority",
+  InvalidInput: "[SWAP]: Invalid input"
+}
