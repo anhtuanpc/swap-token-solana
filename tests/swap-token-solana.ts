@@ -138,9 +138,9 @@ describe("# Solana Program Test Swap", async () => {
     assert.equal(Number(info.amount), rawAmount);
   });
 
-  it("Swap Token", async () => {
+  it("[3]: Swap token successfully", async () => {
     await program.methods
-      .swapToken(new anchor.BN(swapSolValue * anchor.web3.LAMPORTS_PER_SOL))
+      .swap(new anchor.BN(swapSolValue * anchor.web3.LAMPORTS_PER_SOL))
       .accounts({
         poolConfigAccount: poolConfigAccount,
         poolTokenAccount: poolTokenAccount,
@@ -154,7 +154,8 @@ describe("# Solana Program Test Swap", async () => {
       })
       .signers([user])
       .rpc();
-    const userTokenBalance = await getAccount(connection, userTokenAccount);
+    const rawUserTokenBalance = await getAccount(connection, userTokenAccount);
+    const userTokenBalance = parseUnits(rawUserTokenBalance.amount.toString(), decimals)
     const rawTokenPrice = parseUnits(
       tokenPrice.toString(),
       decimals
@@ -162,7 +163,7 @@ describe("# Solana Program Test Swap", async () => {
     const tokenReceive =
       (rawTokenPrice * swapSolValue * anchor.web3.LAMPORTS_PER_SOL) /
       anchor.web3.LAMPORTS_PER_SOL;
-    assert.equal(Number(userTokenBalance.amount), tokenReceive);
+    assert.equal(Number(userTokenBalance), tokenReceive);
   });
 });
 

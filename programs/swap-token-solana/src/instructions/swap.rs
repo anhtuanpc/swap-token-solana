@@ -1,6 +1,7 @@
 use crate::helper::consts::*;
 use crate::instructions::*;
 use crate::helper::utils::*;
+use crate::helper::error::*;
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::native_token::LAMPORTS_PER_SOL;
@@ -13,7 +14,7 @@ pub struct SwapToken<'info> {
     #[account(
         mut,
         seeds = [
-            POOL_TOKEN_ACCOUNT_SEED,
+            TOKEN_SEED,
             authority.key().as_ref(),
             token_mint_address.key().as_ref(),
             pool_config_account.key().as_ref(),
@@ -27,7 +28,7 @@ pub struct SwapToken<'info> {
     /// CHECK: This account will be create when create swap pool
     #[account(mut,
         seeds=[
-            POOL_NATIVE_ACCOUNT_SEED,
+            NATIVE_SEED,
             authority.key().as_ref(),
             token_mint_address.key().as_ref(),
             pool_config_account.key().as_ref()
@@ -38,7 +39,7 @@ pub struct SwapToken<'info> {
 
     #[account(mut,
         seeds = [
-            POOL_CONFIG_ACCOUNT_SEED,
+            CONFIG_SEED,
             authority.key().as_ref(),
             token_mint_address.key().as_ref(),
         ],

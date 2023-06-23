@@ -26,7 +26,7 @@ pub mod swap_token_solana {
         Ok(())
     }
 
-    pub fn swap_token<'info>(
+    pub fn swap<'info>(
         ctx: Context<'_, '_, '_, 'info, SwapToken<'info>>,
         lamport_amount: u64
     ) -> Result<()> {
