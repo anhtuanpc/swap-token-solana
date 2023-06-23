@@ -12,9 +12,10 @@ pub mod swap_token_solana {
     use super::*;
 
     pub fn init_instruction<'info>(
-        ctx: Context<'_, '_, '_, 'info, Initialize<'info>>
+        ctx: Context<'_, '_, '_, 'info, Initialize<'info>>,
+        token_price: u64
     ) -> Result<()> {
-        init_pool(ctx)?;
+        init_pool(ctx, token_price)?;
         Ok(())
     }
 }
