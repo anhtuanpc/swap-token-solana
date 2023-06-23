@@ -2,7 +2,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { assert } from "chai";
 import { airdrop, createToken, mint, setup } from "./utils";
 import { formatUnits, parseUnits } from "@ethersproject/units";
-import { getAccount, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { getAccount, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
 
 describe("# Solana Program Test Swap", async () => {
   // Configure the client to use the local cluster.
@@ -19,10 +19,11 @@ describe("# Solana Program Test Swap", async () => {
   let poolTokenAccount: anchor.web3.PublicKey;
   let poolNativeAccount: anchor.web3.PublicKey;
   let poolConfigAccount: anchor.web3.PublicKey;
+  let userTokenAccount: anchor.web3.PublicKey;
   const decimals = 6;
   const tokenPrice = 10;
   const addLiquidAmount = 10000;
-  // Ensure that the proportion of Sol : Token = 1 : 10
+  const swapSolValue = 1;
 
   before(async () => {
     // airdrop 10 SOL for each wallet
@@ -41,6 +42,11 @@ describe("# Solana Program Test Swap", async () => {
       authority,
       mintAddress,
       10000000000
+    );
+
+    userTokenAccount = await getAssociatedTokenAddress(
+      mintAddress,
+      user.publicKey
     );
 
     // find pda accounts
@@ -130,6 +136,33 @@ describe("# Solana Program Test Swap", async () => {
       .rpc();
     const info = await getAccount(connection, poolTokenAccount);
     assert.equal(Number(info.amount), rawAmount);
+  });
+
+  it("Swap Token", async () => {
+    await program.methods
+      .swapToken(new anchor.BN(swapSolValue * anchor.web3.LAMPORTS_PER_SOL))
+      .accounts({
+        poolConfigAccount: poolConfigAccount,
+        poolTokenAccount: poolTokenAccount,
+        poolNativeAccount: poolNativeAccount,
+        tokenMintAddress: mintAddress,
+        authority: authority.publicKey,
+        userTokenAccount: userTokenAccount,
+        user: user.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+    const userTokenBalance = await getAccount(connection, userTokenAccount);
+    const rawTokenPrice = parseUnits(
+      tokenPrice.toString(),
+      decimals
+    ).toNumber();
+    const tokenReceive =
+      (rawTokenPrice * swapSolValue * anchor.web3.LAMPORTS_PER_SOL) /
+      anchor.web3.LAMPORTS_PER_SOL;
+    assert.equal(Number(userTokenBalance.amount), tokenReceive);
   });
 });
 

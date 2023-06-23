@@ -3,7 +3,6 @@ pub mod helper;
 
 use anchor_lang::prelude::*;
 use instructions::*;
-use helper::*;
 
 declare_id!("9ByBv1L1SRp8tNDLu9rEv67NnYcVnuQ9xzPFQGWKtFUj");
 
@@ -24,6 +23,14 @@ pub mod swap_token_solana {
         amount: u64
     ) -> Result<()> {
         add_liquidity(ctx, amount)?;
+        Ok(())
+    }
+
+    pub fn swap_token<'info>(
+        ctx: Context<'_, '_, '_, 'info, SwapToken<'info>>,
+        lamport_amount: u64
+    ) -> Result<()> {
+        swap_token(ctx, lamport_amount)?;
         Ok(())
     }
 }
