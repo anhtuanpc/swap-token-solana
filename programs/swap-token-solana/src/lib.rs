@@ -2,7 +2,7 @@ pub mod instructions;
 pub mod helper;
 
 use anchor_lang::prelude::*;
-use instruction::*;
+use instructions::*;
 use helper::*;
 
 declare_id!("9ByBv1L1SRp8tNDLu9rEv67NnYcVnuQ9xzPFQGWKtFUj");
@@ -14,7 +14,7 @@ pub mod swap_token_solana {
     pub fn init_instruction<'info>(
         ctx: Context<'_, '_, '_, 'info, Initialize<'info>>
     ) -> Result<()> {
-        handler_init(ctx)?;
+        init_pool(ctx)?;
         Ok(())
     }
 }
