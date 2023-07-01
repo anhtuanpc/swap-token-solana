@@ -2,13 +2,13 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-swap_token_solana = "AUHGCt7m2mvhVYmY5JF3aFKZnZ7dDJNcHNbo2Ni7VXWo"
+swap_token_solana = "F9FoUdonDRvVE7S4ZbXCAV9PHtyGP9cgmvZEPeDfjbzN"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Devnet"
+cluster = "Localnet"
 wallet = "/home/anhtuanpc/my-solana-wallet/my-keypair.json"
 
 [scripts]
