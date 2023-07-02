@@ -66,17 +66,24 @@ pub struct SwapToken<'info> {
 
 pub fn swap_token<'info>(
     ctx: Context<'_, '_, '_, 'info, SwapToken<'info>>,
-    lamport_amount: u64
+    amount: u64,
+    is_native: bool
 ) -> Result<()> {
     let token_price = ctx.accounts.pool_config_account.token_price;
-    let token_amount = (token_price * lamport_amount) / LAMPORTS_PER_SOL;
-    ctx.accounts.transfer_sol(lamport_amount)?;
-    ctx.accounts.transfer_token(token_amount)?;
+    if is_native == true {
+        let token_amount = token_price * amount / LAMPORTS_PER_SOL;
+        ctx.accounts.transfer_sol_in(amount)?;
+        ctx.accounts.transfer_token_out(token_amount)?;
+    } else {
+        let lamport_amount = amount * LAMPORTS_PER_SOL / token_price;
+        ctx.accounts.transfer_token_in(amount)?;
+        ctx.accounts.transfer_sol_out(lamport_amount)?;
+    }
     Ok(())
 }
 
 impl<'info> SwapToken<'info> {
-    fn transfer_sol(&self, lamports_amount: u64) -> Result<()> {
+    fn transfer_sol_in(&self, lamports_amount: u64) -> Result<()> {
         transfer_native_to_account(
             self.user.to_account_info(),
             self.pool_native_account.to_account_info(),
@@ -87,7 +94,31 @@ impl<'info> SwapToken<'info> {
         Ok(())
     }
 
-    fn transfer_token(&self, token_amount: u64) -> Result<()> {
+    fn transfer_sol_out(&self, lamports_amount: u64) -> Result<()> {
+        let authority = self.authority.key();
+        let mint = self.token_mint_address.key();
+        let pool_native_account_bump = self.pool_config_account.pool_native_account_bump;
+        let pool_config_account = self.pool_config_account.key();
+        let seeds = &[
+            &[
+                NATIVE_SEED,
+                authority.as_ref(),
+                mint.as_ref(),
+                pool_config_account.as_ref(),
+                bytemuck::bytes_of(&pool_native_account_bump),
+            ][..],
+        ];
+        transfer_native_to_account(
+            self.pool_native_account.to_account_info(),
+            self.user.to_account_info(),
+            lamports_amount,
+            self.system_program.to_account_info(),
+            Some(seeds)
+        )?;
+        Ok(())
+    }
+
+    fn transfer_token_out(&self, token_amount: u64) -> Result<()> {
         let authority = self.authority.key();
         let mint = self.token_mint_address.key();
         let pool_config_account_bump = self.pool_config_account.pool_config_account_bump;
@@ -106,6 +137,19 @@ impl<'info> SwapToken<'info> {
             token_amount,
             self.token_program.to_account_info(),
             Some(seeds)
+        )?;
+
+        Ok(())
+    }
+
+    fn transfer_token_in(&self, token_amount: u64) -> Result<()> {
+        transfer_token_to_account(
+            self.user_token_account.to_account_info(),
+            self.pool_token_account.to_account_info(),
+            self.user.to_account_info(),
+            token_amount,
+            self.token_program.to_account_info(),
+            None
         )?;
 
         Ok(())

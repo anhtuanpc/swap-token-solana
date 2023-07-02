@@ -2,7 +2,11 @@ import * as anchor from "@coral-xyz/anchor";
 import { assert } from "chai";
 import { ErrorMessage, airdrop, createToken, mint, setup } from "./utils";
 import { formatUnits, parseUnits } from "@ethersproject/units";
-import { getAccount, TOKEN_PROGRAM_ID, getAssociatedTokenAddress } from "@solana/spl-token";
+import {
+  getAccount,
+  TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
+} from "@solana/spl-token";
 
 describe("# Solana Program Test Swap", async () => {
   // Configure the client to use the local cluster.
@@ -24,6 +28,7 @@ describe("# Solana Program Test Swap", async () => {
   const tokenPrice = 10;
   const addLiquidAmount = 10000;
   const swapSolValue = 1;
+  const swapTokenValue = 1;
 
   before(async () => {
     // airdrop 10 SOL for each wallet
@@ -128,7 +133,7 @@ describe("# Solana Program Test Swap", async () => {
         poolTokenAccount: poolTokenAccount,
         tokenMintAddress: mintAddress,
         authority: authority.publicKey,
-        depositorTokenAccount: associatedAccount, 
+        depositorTokenAccount: associatedAccount,
         depositor: authority.publicKey, // reuse authority as a depositor to liquid pool
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: anchor.web3.SystemProgram.programId,
@@ -138,9 +143,9 @@ describe("# Solana Program Test Swap", async () => {
     assert.equal(Number(info.amount), rawAmount);
   });
 
-  it("[3]: Swap token successfully", async () => {
+  it("[3]: Swap sol to token successfully", async () => {
     await program.methods
-      .swap(new anchor.BN(swapSolValue * anchor.web3.LAMPORTS_PER_SOL))
+      .swap(new anchor.BN(swapSolValue * anchor.web3.LAMPORTS_PER_SOL), true)
       .accounts({
         poolConfigAccount: poolConfigAccount,
         poolTokenAccount: poolTokenAccount,
@@ -155,23 +160,24 @@ describe("# Solana Program Test Swap", async () => {
       .signers([user])
       .rpc();
     const rawUserTokenBalance = await getAccount(connection, userTokenAccount);
-    const userTokenBalance = parseUnits(rawUserTokenBalance.amount.toString(), decimals)
+    const userTokenBalance = parseUnits(
+      rawUserTokenBalance.amount.toString(),
+      decimals
+    );
     const rawTokenPrice = parseUnits(
       tokenPrice.toString(),
       decimals
     ).toNumber();
-    const tokenReceive =
-      (rawTokenPrice * swapSolValue * anchor.web3.LAMPORTS_PER_SOL) /
-      anchor.web3.LAMPORTS_PER_SOL;
+    const tokenReceive = rawTokenPrice * swapSolValue;
     assert.equal(Number(userTokenBalance), tokenReceive);
   });
 
-  it("[4]: Swap Token insufficient funds", async () => {
+  it("[4]: Swap sol to token insufficient funds", async () => {
     const userBalance = await connection.getBalance(user.publicKey);
     let sig: string | null;
     try {
       sig = await program.methods
-        .swap(new anchor.BN(userBalance + 1))
+        .swap(new anchor.BN(userBalance + 1), true)
         .accounts({
           poolConfigAccount: poolConfigAccount,
           poolTokenAccount: poolTokenAccount,
@@ -192,6 +198,32 @@ describe("# Solana Program Test Swap", async () => {
     }
     assert.equal(sig, null);
   });
+
+  it("[5]: Swap token to sol successfully", async () => {
+    await program.methods
+      .swap(new anchor.BN(swapTokenValue), false)
+      .accounts({
+        poolConfigAccount: poolConfigAccount,
+        poolTokenAccount: poolTokenAccount,
+        poolNativeAccount: poolNativeAccount,
+        tokenMintAddress: mintAddress,
+        authority: authority.publicKey,
+        userTokenAccount: userTokenAccount,
+        user: user.publicKey,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .signers([user])
+      .rpc();
+    const rawUserTokenBalance = await getAccount(connection, userTokenAccount);
+    const userTokenBalance = parseUnits(
+      rawUserTokenBalance.amount.toString(),
+      decimals
+    );
+    const rawTokenPrice = parseUnits(
+      tokenPrice.toString(),
+      decimals
+    ).toNumber();
+    assert.equal(Number(userTokenBalance), 9 * 10 ** 6);
+  });
 });
-
-

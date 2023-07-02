@@ -28,9 +28,10 @@ pub mod swap_token_solana {
 
     pub fn swap<'info>(
         ctx: Context<'_, '_, '_, 'info, SwapToken<'info>>,
-        lamport_amount: u64,
+        amount: u64,
+        is_native: bool,
     ) -> Result<()> {
-        swap_token(ctx, lamport_amount)?;
+        swap_token(ctx, amount, is_native)?;
         Ok(())
     }
 }
